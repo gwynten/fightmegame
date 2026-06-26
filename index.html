@@ -548,6 +548,7 @@
             <div class="actions">
               <button id="createRoomBtn" class="primary" type="button">create group code</button>
             </div>
+            <p id="homeStatus" class="note" style="margin-top:12px">ready to create a room.</p>
           </div>
 
           <div class="card">
@@ -756,6 +757,7 @@
     const joinCode = document.getElementById("joinCode");
     const createRoomBtn = document.getElementById("createRoomBtn");
     const joinRoomBtn = document.getElementById("joinRoomBtn");
+    const homeStatus = document.getElementById("homeStatus");
     const roomCodeDisplay = document.getElementById("roomCodeDisplay");
     const lobbyPlayers = document.getElementById("lobbyPlayers");
     const lobbyStatus = document.getElementById("lobbyStatus");
@@ -790,6 +792,7 @@
       try {
         app = initializeApp(firebaseConfig);
         db = getDatabase(app);
+        setStatus("firebase connected. enter your name and create a group code.");
         showScreen("home");
       } catch (err) {
         console.error(err);
@@ -836,88 +839,148 @@
     }
 
     async function createRoom() {
-      if (!db) return showToast("connect firebase first");
+      createRoomBtn.disabled = true;
+      createRoomBtn.textContent = "creating...";
+      setStatus("creating your group code...");
 
-      const name = cleanName(hostName.value);
-      if (!name) return showToast("enter your name");
+      try {
+        if (!db) throw new Error("firebase is not connected");
 
-      const topics = getCleanTopics();
-      const count = Number(topicCount.value);
-      if (topics.length < count) return showToast(`add at least ${count} topics`);
+        const name = cleanName(hostName.value);
+        if (!name) {
+          setStatus("enter your name first.");
+          showToast("enter your name");
+          return;
+        }
 
-      let code = generateCode();
-      let attempts = 0;
-      while (attempts < 8) {
-        const exists = await get(ref(db, `rooms/${code}`));
-        if (!exists.exists()) break;
-        code = generateCode();
-        attempts++;
+        const topics = getCleanTopics();
+        const count = Number(topicCount.value);
+        if (topics.length < count) {
+          setStatus(`add at least ${count} topics or choose fewer topics.`);
+          showToast(`add at least ${count} topics`);
+          return;
+        }
+
+        let code = generateCode();
+        let attempts = 0;
+        while (attempts < 8) {
+          const exists = await get(ref(db, `rooms/${code}`));
+          if (!exists.exists()) break;
+          code = generateCode();
+          attempts++;
+        }
+
+        const selectedTopics = shuffle([...topics]).slice(0, count);
+        const playerId = makePlayerId();
+
+        const room = {
+          code,
+          phase: "lobby",
+          hostId: playerId,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          selectedTopics,
+          players: {
+            [playerId]: {
+              id: playerId,
+              name,
+              joinedAt: Date.now(),
+              finished: false
+            }
+          },
+          answers: {}
+        };
+
+        await set(ref(db, `rooms/${code}`), room);
+
+        state.roomCode = code;
+        state.playerId = playerId;
+        state.playerName = name;
+        state.isHost = true;
+        setUrlRoom(code);
+        listenToRoom(code);
+        setStatus(`room created: ${code}`);
+        showToast("group code created");
+      } catch (err) {
+        console.error("create room failed:", err);
+        const message = cleanFirebaseError(err);
+        setStatus(`could not create room: ${message}`);
+        showToast(`could not create room: ${message}`);
+        alert(`could not create room:
+
+${message}
+
+Most common fix: Firebase → Realtime Database → Rules → set rooms read/write to true for testing.`);
+      } finally {
+        createRoomBtn.disabled = false;
+        createRoomBtn.textContent = "create group code";
       }
-
-      const selectedTopics = shuffle([...topics]).slice(0, count);
-      const playerId = makePlayerId();
-
-      const room = {
-        code,
-        phase: "lobby",
-        hostId: playerId,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        selectedTopics,
-        players: {
-          [playerId]: {
-            id: playerId,
-            name,
-            joinedAt: Date.now(),
-            finished: false
-          }
-        },
-        answers: {}
-      };
-
-      await set(ref(db, `rooms/${code}`), room);
-
-      state.roomCode = code;
-      state.playerId = playerId;
-      state.playerName = name;
-      state.isHost = true;
-      setUrlRoom(code);
-      listenToRoom(code);
-      showToast("group code created");
     }
 
     async function joinExistingRoom() {
-      if (!db) return showToast("connect firebase first");
+      joinRoomBtn.disabled = true;
+      joinRoomBtn.textContent = "joining...";
+      setStatus("joining room...");
 
-      const name = cleanName(joinName.value);
-      const code = joinCode.value.trim().toUpperCase();
-      if (!name) return showToast("enter your name");
-      if (!code) return showToast("enter the group code");
+      try {
+        if (!db) throw new Error("firebase is not connected");
 
-      const roomSnap = await get(ref(db, `rooms/${code}`));
-      if (!roomSnap.exists()) return showToast("room not found");
+        const name = cleanName(joinName.value);
+        const code = joinCode.value.trim().toUpperCase();
+        if (!name) {
+          setStatus("enter your name first.");
+          showToast("enter your name");
+          return;
+        }
+        if (!code) {
+          setStatus("enter the group code first.");
+          showToast("enter the group code");
+          return;
+        }
 
-      const room = roomSnap.val();
-      if (room.phase !== "lobby") {
-        return showToast("this room already started");
+        const roomSnap = await get(ref(db, `rooms/${code}`));
+        if (!roomSnap.exists()) {
+          setStatus("room not found. check the code.");
+          showToast("room not found");
+          return;
+        }
+
+        const room = roomSnap.val();
+        if (room.phase !== "lobby") {
+          setStatus("this room already started.");
+          showToast("this room already started");
+          return;
+        }
+
+        const playerId = makePlayerId();
+        await update(ref(db, `rooms/${code}/players/${playerId}`), {
+          id: playerId,
+          name,
+          joinedAt: Date.now(),
+          finished: false
+        });
+        await update(ref(db, `rooms/${code}`), { updatedAt: Date.now() });
+
+        state.roomCode = code;
+        state.playerId = playerId;
+        state.playerName = name;
+        state.isHost = room.hostId === playerId;
+        setUrlRoom(code);
+        listenToRoom(code);
+        setStatus(`joined room: ${code}`);
+        showToast("joined group");
+      } catch (err) {
+        console.error("join room failed:", err);
+        const message = cleanFirebaseError(err);
+        setStatus(`could not join room: ${message}`);
+        showToast(`could not join room: ${message}`);
+        alert(`could not join room:
+
+${message}`);
+      } finally {
+        joinRoomBtn.disabled = false;
+        joinRoomBtn.textContent = "join fight";
       }
-
-      const playerId = makePlayerId();
-      await update(ref(db, `rooms/${code}/players/${playerId}`), {
-        id: playerId,
-        name,
-        joinedAt: Date.now(),
-        finished: false
-      });
-      await update(ref(db, `rooms/${code}`), { updatedAt: Date.now() });
-
-      state.roomCode = code;
-      state.playerId = playerId;
-      state.playerName = name;
-      state.isHost = room.hostId === playerId;
-      setUrlRoom(code);
-      listenToRoom(code);
-      showToast("joined group");
     }
 
     function listenToRoom(code) {
@@ -1304,6 +1367,21 @@
         [array[i], array[j]] = [array[j], array[i]];
       }
       return array;
+    }
+
+    function setStatus(message) {
+      if (homeStatus) homeStatus.textContent = message;
+    }
+
+    function cleanFirebaseError(err) {
+      const raw = String(err && (err.message || err.code) ? (err.message || err.code) : err);
+      if (raw.toLowerCase().includes("permission")) {
+        return "firebase permission denied. set realtime database rules to allow rooms read/write while testing.";
+      }
+      if (raw.toLowerCase().includes("network")) {
+        return "network error. check internet connection and firebase database url.";
+      }
+      return raw.replace(/^firebase: /i, "").slice(0, 220);
     }
 
     function showToast(message) {
