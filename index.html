@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fight me game! — live group code</title>
+  <style>
+    :root {
+      --olive: #7b845b;
+      --olive-deep: #68714a;
+      --olive-soft: #9ca57f;
+      --paper: #a2ab85;
+      --paper-light: #c1c8a8;
+      --ink: #0f0f0e;
+      --cream: #ece9dc;
+      --border: rgba(15, 15, 14, 0.82);
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+      --radius: 26px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 18% 20%, rgba(255,255,255,0.06), transparent 24%),
+        radial-gradient(circle at 80% 72%, rgba(0,0,0,0.06), transparent 24%),
+        linear-gradient(180deg, rgba(255,255,255,0.025), rgba(0,0,0,0.035)),
+        var(--olive);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      text-transform: lowercase;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.15;
+      background:
+        radial-gradient(rgba(255,255,255,0.14) 0.8px, transparent 1px),
+        radial-gradient(rgba(0,0,0,0.16) 0.8px, transparent 1px),
+        radial-gradient(circle at 25% 30%, rgba(255,255,255,0.05), transparent 28%),
+        radial-gradient(circle at 72% 68%, rgba(0,0,0,0.05), transparent 30%);
+      background-size: 14px 14px, 17px 17px, auto, auto;
+      background-position: 0 0, 7px 9px, 0 0, 0 0;
+      mix-blend-mode: multiply;
+    }
+
+    .app {
+      width: min(1120px, calc(100% - 24px));
+      margin: 14px auto 30px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .cover, .panel {
+      position: relative;
+      overflow: hidden;
+      border: 1.8px solid var(--border);
+      border-radius: 10px 28px 28px 10px;
+      background:
+        linear-gradient(90deg, rgba(0,0,0,0.12), rgba(0,0,0,0.04) 22px, transparent 22px),
+        linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.04)),
+        rgba(163, 171, 133, 0.95);
+      box-shadow: var(--shadow);
+    }
+
+    .cover {
+      min-height: 260px;
+      background:
+        linear-gradient(90deg, rgba(0,0,0,0.14), rgba(0,0,0,0.04) 22px, transparent 22px),
+        linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.03)),
+        var(--olive-soft);
+      isolation: isolate;
+    }
+
+    .cover::before, .panel::before {
+      content: "";
+      position: absolute;
+      left: 18px;
+      top: 0;
+      bottom: 0;
+      width: 44px;
+      border-right: 1.8px solid rgba(0,0,0,0.4);
+      opacity: 0.68;
+    }
+
+    .spine-note {
+      position: absolute;
+      left: 15px;
+      bottom: 22px;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 0.8rem;
+      letter-spacing: 0.09em;
+      opacity: 0.95;
+    }
+
+    .cover-stamp {
+      width: fit-content;
+      border: 1.6px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 12px;
+      background: rgba(236,233,220,0.18);
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+    }
+
+    .cover-inner {
+      padding: 38px 24px 28px 88px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .title-block {
+      max-width: 860px;
+      line-height: 0.84;
+      letter-spacing: -0.07em;
+      font-style: italic;
+      font-weight: 700;
+      font-size: clamp(3rem, 11vw, 7rem);
+      margin: 0;
+    }
+
+    .title-block .line { display: block; }
+    .title-block .solid { color: var(--ink); }
+    .title-block .ghost {
+      color: rgba(15,15,14,0.24);
+      -webkit-text-stroke: 1.2px rgba(15,15,14,0.8);
+    }
+
+    .subcopy {
+      max-width: 690px;
+      font-size: clamp(1.08rem, 2.6vw, 1.3rem);
+      line-height: 1.45;
+      color: rgba(15,15,14,0.86);
+      margin: 0;
+    }
+
+    .panel-inner {
+      margin-left: clamp(34px, 6vw, 60px);
+      padding: clamp(16px, 4vw, 28px);
+    }
+
+    .panel-title {
+      margin: 0 0 10px;
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      font-style: italic;
+    }
+
+    .panel-text {
+      margin: 0 0 18px;
+      line-height: 1.5;
+      color: rgba(15,15,14,0.8);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    @media (min-width: 900px) {
+      .layout.two { grid-template-columns: 0.95fr 1.05fr; }
+      .layout.three { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .card {
+      border: 1.6px solid rgba(15,15,14,0.78);
+      border-radius: 22px;
+      background: rgba(236,233,220,0.22);
+      padding: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1.8px solid var(--border);
+      border-radius: 18px;
+      padding: 12px 14px;
+      background: rgba(245, 243, 234, 0.75);
+      color: var(--ink);
+      font: inherit;
+      text-transform: none;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 260px;
+      resize: vertical;
+      line-height: 1.4;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      background: rgba(248,246,240,0.92);
+      box-shadow: 0 0 0 3px rgba(236,233,220,0.75);
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .row > input { flex: 1 1 220px; }
+
+    button {
+      appearance: none;
+      border: 1.8px solid var(--border);
+      border-radius: 999px;
+      padding: 11px 16px;
+      background: rgba(245,243,234,0.7);
+      color: var(--ink);
+      font: inherit;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      box-shadow: 2px 3px 0 rgba(15,15,14,0.82);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.2s ease;
+    }
+
+    button:hover { background: rgba(245,243,234,0.95); }
+    button:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0 1px 0 rgba(15,15,14,0.82);
+    }
+
+    button.primary { background: rgba(236,233,220,0.92); }
+    button.danger { background: rgba(255, 211, 211, 0.72); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .note, .small {
+      font-size: 0.93rem;
+      line-height: 1.45;
+      color: rgba(15,15,14,0.76);
+    }
+
+    .hidden { display: none !important; }
+
+    .big-code {
+      display: inline-block;
+      font-size: clamp(2.8rem, 11vw, 5.2rem);
+      line-height: 1;
+      letter-spacing: 0.08em;
+      font-style: italic;
+      font-weight: 700;
+      border: 1.8px solid var(--border);
+      border-radius: 22px;
+      background: rgba(245,243,234,0.44);
+      padding: 14px 18px 8px;
+      margin: 10px 0;
+      text-transform: uppercase;
+    }
+
+    .status-box {
+      border: 1.6px dashed rgba(15,15,14,0.65);
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(245,243,234,0.24);
+      color: rgba(15,15,14,0.76);
+    }
+
+    .player-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1.5px solid rgba(15,15,14,0.78);
+      border-radius: 999px;
+      padding: 8px 10px 8px 12px;
+      background: rgba(245,243,234,0.4);
+      text-transform: none;
+      font-weight: 700;
+    }
+
+    .pill.done { background: rgba(236,233,220,0.82); }
+
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      color: rgba(15,15,14,0.8);
+    }
+
+    .progress {
+      height: 14px;
+      border: 1.8px solid rgba(15,15,14,0.76);
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(245,243,234,0.35);
+      margin-bottom: 18px;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(15,15,14,0.9), rgba(236,233,220,0.92));
+      transition: width 0.2s ease;
+    }
+
+    .question-card {
+      border: 1.7px solid rgba(15,15,14,0.78);
+      border-radius: 24px;
+      background: rgba(245,243,234,0.34);
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .turn-badge {
+      display: inline-block;
+      border: 1.5px solid rgba(15,15,14,0.72);
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: rgba(245,243,234,0.45);
+      margin-bottom: 12px;
+      font-size: 0.92rem;
+      text-transform: none;
+    }
+
+    .topic {
+      margin: 0;
+      font-size: clamp(1.8rem, 5vw, 2.9rem);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+      font-style: italic;
+    }
+
+    .scale {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 760px) {
+      .scale { grid-template-columns: repeat(5, 1fr); }
+    }
+
+    .scale button {
+      min-height: 88px;
+      border-radius: 22px;
+      padding: 14px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: rgba(245,243,234,0.54);
+    }
+
+    .scale strong {
+      display: block;
+      font-size: 1.5rem;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .results {
+      display: grid;
+      gap: 14px;
+    }
+
+    .result-card {
+      border: 1.7px solid rgba(15,15,14,0.78);
+      border-radius: 24px;
+      background: rgba(245,243,234,0.42);
+      padding: 16px;
+    }
+
+    .pair-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .pair-rank { font-size: 0.92rem; color: rgba(15,15,14,0.74); }
+
+    .pair-title {
+      margin-top: 3px;
+      font-size: 1.45rem;
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+      font-style: italic;
+      text-transform: none;
+    }
+
+    .score-pill {
+      border: 1.6px solid rgba(15,15,14,0.8);
+      border-radius: 999px;
+      padding: 7px 11px;
+      background: rgba(236,233,220,0.85);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .meter {
+      height: 12px;
+      border: 1.6px solid rgba(15,15,14,0.74);
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.3);
+      margin: 12px 0 10px;
+    }
+
+    .meter-fill {
+      height: 100%;
+      background: linear-gradient(90deg, rgba(15,15,14,0.9), rgba(236,233,220,0.95));
+    }
+
+    .duel {
+      margin-top: 12px;
+      padding: 13px;
+      border: 1.6px dashed rgba(15,15,14,0.72);
+      border-radius: 18px;
+      background: rgba(193,200,168,0.34);
+    }
+
+    .duel-title {
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
+
+    .answer-line {
+      display: grid;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .answer-line span { text-transform: none; font-size: 0.96rem; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      z-index: 100;
+      max-width: calc(100vw - 28px);
+      text-align: center;
+      border: 1.8px solid rgba(15,15,14,0.8);
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: rgba(245,243,234,0.96);
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-5px);
+    }
+
+    .setup-warning {
+      border: 1.6px solid rgba(15,15,14,0.78);
+      border-radius: 18px;
+      background: rgba(255, 244, 196, 0.45);
+      padding: 14px;
+      margin-bottom: 18px;
+    }
+
+    code {
+      text-transform: none;
+      background: rgba(245,243,234,0.55);
+      border: 1px solid rgba(15,15,14,0.4);
+      border-radius: 8px;
+      padding: 1px 5px;
+    }
+
+    @media (max-width: 700px) {
+      .cover-inner { padding: 28px 18px 22px 82px; }
+      .pair-head { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="cover">
+      <div class="spine-note">debate file / live room</div>
+      <div class="cover-inner">
+        <div class="cover-stamp">group code edition</div>
+        <h1 class="title-block">
+          <span class="line solid">fight</span>
+          <span class="line ghost">me</span>
+          <span class="line solid">game!</span>
+        </h1>
+        <p class="subcopy">dare to fight all your friends -- and remain victorious!</p>
+      </div>
+    </section>
+
+    <section id="configScreen" class="panel hidden">
+      <div class="panel-inner">
+        <h2 class="panel-title">connect the live room</h2>
+        <div class="setup-warning">
+          <strong>one tiny setup step:</strong> to let everyone play from separate phones, this page needs a firebase realtime database. paste your firebase config into the code where it says <code>paste-your-firebase-config-here</code>, then upload this file to github pages.
+        </div>
+        <p class="panel-text">
+          the group code system is already built in. once firebase is connected, one person creates a room, everyone else joins with the same code, and votes sync across devices.
+        </p>
+      </div>
+    </section>
+
+    <section id="homeScreen" class="panel">
+      <div class="panel-inner">
+        <h2 class="panel-title">enter the arena</h2>
+        <p class="panel-text">
+          create a group code or join a friend's code. each person should open this website on their own device.
+        </p>
+
+        <div class="layout two">
+          <div class="card">
+            <h3 class="panel-title" style="font-size:2rem">create group</h3>
+            <label for="hostName">your name</label>
+            <input id="hostName" type="text" placeholder="e.g. angeli" autocomplete="off" />
+
+            <label for="topicCount">topics this round</label>
+            <select id="topicCount">
+              <option value="10" selected>10 topics</option>
+              <option value="8">8 topics</option>
+              <option value="12">12 topics</option>
+              <option value="15">15 topics</option>
+            </select>
+
+            <details style="margin-top:14px">
+              <summary><strong>edit topic bank</strong></summary>
+              <p class="note">one topic per line. the game randomly chooses from this bank when the room is created.</p>
+              <textarea id="topicsBox"></textarea>
+            </details>
+
+            <div class="actions">
+              <button id="createRoomBtn" class="primary" type="button">create group code</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="panel-title" style="font-size:2rem">join group</h3>
+            <label for="joinName">your name</label>
+            <input id="joinName" type="text" placeholder="e.g. doug" autocomplete="off" />
+
+            <label for="joinCode">group code</label>
+            <input id="joinCode" type="text" placeholder="e.g. FIGHT7" autocomplete="off" maxlength="8" />
+
+            <div class="actions">
+              <button id="joinRoomBtn" class="primary" type="button">join fight</button>
+            </div>
+
+            <p class="note">group codes are usually 6 characters and are not case-sensitive.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="lobbyScreen" class="panel hidden">
+      <div class="panel-inner">
+        <h2 class="panel-title">lobby</h2>
+        <p class="panel-text">share this code with your friends. when everyone has joined, start the round.</p>
+
+        <div class="big-code" id="roomCodeDisplay">------</div>
+
+        <div class="layout two">
+          <div class="card">
+            <h3 class="panel-title" style="font-size:1.9rem">players</h3>
+            <div id="lobbyPlayers" class="player-list"></div>
+            <p id="lobbyStatus" class="note">waiting for players...</p>
+
+            <div class="actions">
+              <button id="copyInviteBtn" type="button">copy invite</button>
+              <button id="startRoundBtn" class="primary" type="button">start round</button>
+              <button id="leaveLobbyBtn" type="button">leave</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="panel-title" style="font-size:1.9rem">how this works</h3>
+            <p class="note">
+              everyone joins with the same code. each person votes on their own device. once every player finishes, the closest matches and debate prompts appear for everyone.
+            </p>
+            <div class="status-box" id="syncStatus">syncing room...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="panel hidden">
+      <div class="panel-inner">
+        <h2 class="panel-title">take your position</h2>
+
+        <div class="progress-head">
+          <span id="progressLabel">topic 1 of 10</span>
+          <span id="roomProgressLabel">waiting for answers</span>
+        </div>
+        <div class="progress"><div id="progressFill" class="progress-fill"></div></div>
+
+        <div class="question-card">
+          <div id="currentPlayer" class="turn-badge">your turn</div>
+          <p id="topicText" class="topic">topic goes here</p>
+          <p class="note" style="margin:10px 0 0">choose the number that honestly fits your opinion best.</p>
+        </div>
+
+        <div class="scale">
+          <button type="button" data-score="1"><strong>1</strong><span>strongly disagree</span></button>
+          <button type="button" data-score="2"><strong>2</strong><span>disagree</span></button>
+          <button type="button" data-score="3"><strong>3</strong><span>neutral</span></button>
+          <button type="button" data-score="4"><strong>4</strong><span>agree</span></button>
+          <button type="button" data-score="5"><strong>5</strong><span>strongly agree</span></button>
+        </div>
+
+        <div class="actions">
+          <button id="backBtn" type="button">back</button>
+          <button id="leaveGameBtn" type="button">leave room</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="waitingScreen" class="panel hidden">
+      <div class="panel-inner">
+        <h2 class="panel-title">waiting for the drama</h2>
+        <p class="panel-text">you finished voting. results will appear once everyone is done.</p>
+        <div class="card">
+          <div id="waitingPlayers" class="player-list"></div>
+          <p id="waitingStatus" class="note"></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="resultsScreen" class="panel hidden">
+      <div class="panel-inner">
+        <h2 class="panel-title">same brain, then fight</h2>
+        <p class="panel-text">
+          higher percentages mean the pair answered more similarly. every pair gets one “duke it out” topic based on their biggest disagreement.
+        </p>
+
+        <div id="resultsGrid" class="results"></div>
+
+        <div class="actions">
+          <button id="copyResultsBtn" type="button">copy results</button>
+          <button id="newRoomBtn" type="button" class="primary">new room</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      getDatabase, ref, set, get, update, onValue, off, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+
+    /*
+      paste-your-firebase-config-here
+
+      1. create a firebase project
+      2. add a web app
+      3. create a realtime database
+      4. paste your config object below
+      5. replace database rules for testing with:
+         {
+           "rules": {
+             "rooms": {
+               ".read": true,
+               ".write": true
+             }
+           }
+         }
+
+      after testing, tighten these rules before sharing widely.
+    */
+    const firebaseConfig = {
+      apiKey: "paste-your-api-key",
+      authDomain: "paste-your-project.firebaseapp.com",
+      databaseURL: "https://paste-your-project-default-rtdb.firebaseio.com",
+      projectId: "paste-your-project",
+      storageBucket: "paste-your-project.appspot.com",
+      messagingSenderId: "paste-your-sender-id",
+      appId: "paste-your-app-id"
+    };
+
+    const defaultTopics = [
+      "people are inherently evil",
+      "furries should be allowed to run for president",
+      "men look better with facial hair",
+      "stereotypes about driving ability based on race or gender are unacceptable",
+      "acupuncture and other traditional chinese medicine works",
+      "you don't return a dropped $20 bill if you know for a fact the owner would never realize it was gone",
+      "if you witness a friend doing something illegal but harmless, loyalty to them outweighs your duty to the law",
+      "panda express can be considered chinese food",
+      "a whistleblower who leaks classified government files that expose corruption but also put national security at risk is a criminal",
+      "driving a tesla is problematic",
+      "200 mg of caffeine a day is too much",
+      "people inherently trust tall people more",
+      "pineapple belongs on pizza",
+      "ghosting is acceptable after one bad first date",
+      "billionaires should not exist",
+      "you can separate the art from the artist",
+      "being brutally honest is kinder than being polite",
+      "there is no such thing as a harmless lie",
+      "you should always tell a friend if their partner is cheating",
+      "dogs are better than cats",
+      "an itinerary makes a vacation better",
+      "karaoke is only fun when people are bad at it",
+      "ai-generated art should count as real art",
+      "cancel culture does more harm than good",
+      "zodiac signs tell you something real about a person",
+      "adults should be expected to know how to cook basic meals",
+      "vegan cheese should not be called cheese",
+      "books are usually better than their movie adaptations",
+      "people who use speakerphone in public are villains",
+      "a wedding with no open bar is still a good wedding",
+      "you should not date someone with opposite political views",
+      "it is okay to judge someone by their music taste",
+      "the best fries are thin and crispy",
+      "social media has made people less socially aware",
+      "roommates should be allowed to veto overnight guests",
+      "it is worse to be boring than annoying",
+      "luck matters more than hard work",
+      "it is okay to leave a party without saying goodbye",
+      "breakfast food is better at night",
+      "a little jealousy in a relationship is healthy"
+    ];
+
+    const scaleLabels = {
+      1: "strongly disagree",
+      2: "disagree",
+      3: "neutral",
+      4: "agree",
+      5: "strongly agree"
+    };
+
+    let app = null;
+    let db = null;
+    let roomListenerRef = null;
+
+    const state = {
+      roomCode: "",
+      playerId: "",
+      playerName: "",
+      room: null,
+      currentTopicIndex: 0,
+      isHost: false
+    };
+
+    const screens = {
+      config: document.getElementById("configScreen"),
+      home: document.getElementById("homeScreen"),
+      lobby: document.getElementById("lobbyScreen"),
+      game: document.getElementById("gameScreen"),
+      waiting: document.getElementById("waitingScreen"),
+      results: document.getElementById("resultsScreen")
+    };
+
+    const topicsBox = document.getElementById("topicsBox");
+    const topicCount = document.getElementById("topicCount");
+    const hostName = document.getElementById("hostName");
+    const joinName = document.getElementById("joinName");
+    const joinCode = document.getElementById("joinCode");
+    const createRoomBtn = document.getElementById("createRoomBtn");
+    const joinRoomBtn = document.getElementById("joinRoomBtn");
+    const roomCodeDisplay = document.getElementById("roomCodeDisplay");
+    const lobbyPlayers = document.getElementById("lobbyPlayers");
+    const lobbyStatus = document.getElementById("lobbyStatus");
+    const syncStatus = document.getElementById("syncStatus");
+    const copyInviteBtn = document.getElementById("copyInviteBtn");
+    const startRoundBtn = document.getElementById("startRoundBtn");
+    const leaveLobbyBtn = document.getElementById("leaveLobbyBtn");
+    const progressLabel = document.getElementById("progressLabel");
+    const roomProgressLabel = document.getElementById("roomProgressLabel");
+    const progressFill = document.getElementById("progressFill");
+    const currentPlayer = document.getElementById("currentPlayer");
+    const topicText = document.getElementById("topicText");
+    const scaleButtons = document.querySelectorAll(".scale button");
+    const backBtn = document.getElementById("backBtn");
+    const leaveGameBtn = document.getElementById("leaveGameBtn");
+    const waitingPlayers = document.getElementById("waitingPlayers");
+    const waitingStatus = document.getElementById("waitingStatus");
+    const resultsGrid = document.getElementById("resultsGrid");
+    const copyResultsBtn = document.getElementById("copyResultsBtn");
+    const newRoomBtn = document.getElementById("newRoomBtn");
+    const toast = document.getElementById("toast");
+
+    init();
+
+    function init() {
+      topicsBox.value = defaultTopics.join("\n");
+      setupFirebase();
+      bindEvents();
+    }
+
+    function setupFirebase() {
+      const looksUnconfigured =
+        firebaseConfig.apiKey.includes("paste-your") ||
+        firebaseConfig.databaseURL.includes("paste-your");
+
+      if (looksUnconfigured) {
+        showScreen("config");
+        showToast("firebase config needed for live group codes");
+        return;
+      }
+
+      try {
+        app = initializeApp(firebaseConfig);
+        db = getDatabase(app);
+        showScreen("home");
+      } catch (err) {
+        console.error(err);
+        showScreen("config");
+        showToast("firebase could not connect");
+      }
+    }
+
+    function bindEvents() {
+      createRoomBtn.addEventListener("click", createRoom);
+      joinRoomBtn.addEventListener("click", joinExistingRoom);
+      joinCode.addEventListener("input", () => {
+        joinCode.value = joinCode.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      });
+
+      copyInviteBtn.addEventListener("click", copyInvite);
+      startRoundBtn.addEventListener("click", startRound);
+      leaveLobbyBtn.addEventListener("click", leaveRoom);
+      leaveGameBtn.addEventListener("click", leaveRoom);
+      backBtn.addEventListener("click", goBackOneAnswer);
+      newRoomBtn.addEventListener("click", () => {
+        detachRoomListener();
+        clearUrlRoom();
+        state.roomCode = "";
+        state.playerId = "";
+        state.playerName = "";
+        state.room = null;
+        state.currentTopicIndex = 0;
+        state.isHost = false;
+        showScreen("home");
+      });
+
+      scaleButtons.forEach((button) => {
+        button.addEventListener("click", () => recordAnswer(Number(button.dataset.score)));
+      });
+
+      copyResultsBtn.addEventListener("click", copyResults);
+
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("room");
+      if (code) {
+        joinCode.value = code.toUpperCase();
+      }
+    }
+
+    async function createRoom() {
+      if (!db) return showToast("connect firebase first");
+
+      const name = cleanName(hostName.value);
+      if (!name) return showToast("enter your name");
+
+      const topics = getCleanTopics();
+      const count = Number(topicCount.value);
+      if (topics.length < count) return showToast(`add at least ${count} topics`);
+
+      let code = generateCode();
+      let attempts = 0;
+      while (attempts < 8) {
+        const exists = await get(ref(db, `rooms/${code}`));
+        if (!exists.exists()) break;
+        code = generateCode();
+        attempts++;
+      }
+
+      const selectedTopics = shuffle([...topics]).slice(0, count);
+      const playerId = makePlayerId();
+
+      const room = {
+        code,
+        phase: "lobby",
+        hostId: playerId,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        selectedTopics,
+        players: {
+          [playerId]: {
+            id: playerId,
+            name,
+            joinedAt: Date.now(),
+            finished: false
+          }
+        },
+        answers: {}
+      };
+
+      await set(ref(db, `rooms/${code}`), room);
+
+      state.roomCode = code;
+      state.playerId = playerId;
+      state.playerName = name;
+      state.isHost = true;
+      setUrlRoom(code);
+      listenToRoom(code);
+      showToast("group code created");
+    }
+
+    async function joinExistingRoom() {
+      if (!db) return showToast("connect firebase first");
+
+      const name = cleanName(joinName.value);
+      const code = joinCode.value.trim().toUpperCase();
+      if (!name) return showToast("enter your name");
+      if (!code) return showToast("enter the group code");
+
+      const roomSnap = await get(ref(db, `rooms/${code}`));
+      if (!roomSnap.exists()) return showToast("room not found");
+
+      const room = roomSnap.val();
+      if (room.phase !== "lobby") {
+        return showToast("this room already started");
+      }
+
+      const playerId = makePlayerId();
+      await update(ref(db, `rooms/${code}/players/${playerId}`), {
+        id: playerId,
+        name,
+        joinedAt: Date.now(),
+        finished: false
+      });
+      await update(ref(db, `rooms/${code}`), { updatedAt: Date.now() });
+
+      state.roomCode = code;
+      state.playerId = playerId;
+      state.playerName = name;
+      state.isHost = room.hostId === playerId;
+      setUrlRoom(code);
+      listenToRoom(code);
+      showToast("joined group");
+    }
+
+    function listenToRoom(code) {
+      detachRoomListener();
+
+      roomListenerRef = ref(db, `rooms/${code}`);
+      onValue(roomListenerRef, (snapshot) => {
+        if (!snapshot.exists()) {
+          showToast("room disappeared");
+          showScreen("home");
+          return;
+        }
+
+        state.room = snapshot.val();
+        state.isHost = state.room.hostId === state.playerId;
+        renderRoom();
+      });
+    }
+
+    function detachRoomListener() {
+      if (roomListenerRef) {
+        off(roomListenerRef);
+        roomListenerRef = null;
+      }
+    }
+
+    function renderRoom() {
+      const room = state.room;
+      if (!room) return;
+
+      roomCodeDisplay.textContent = room.code;
+      syncStatus.textContent = `connected as ${state.playerName}. room code: ${room.code}`;
+      startRoundBtn.disabled = !state.isHost || playerArray(room).length < 2;
+      startRoundBtn.textContent = state.isHost ? "start round" : "waiting for host";
+      renderPlayerPills(lobbyPlayers, room);
+
+      if (room.phase === "lobby") {
+        lobbyStatus.textContent = `${playerArray(room).length} player(s) in the room.`;
+        showScreen("lobby");
+        return;
+      }
+
+      if (room.phase === "playing") {
+        const myAnswers = getMyAnswers(room);
+        const total = room.selectedTopics.length;
+        const answeredCount = Object.keys(myAnswers).length;
+
+        if (answeredCount >= total) {
+          renderWaiting(room);
+          showScreen("waiting");
+        } else {
+          state.currentTopicIndex = findFirstUnansweredIndex(room);
+          renderQuestion(room);
+          showScreen("game");
+        }
+
+        if (allPlayersFinished(room)) {
+          update(ref(db, `rooms/${room.code}`), { phase: "results", updatedAt: Date.now() });
+        }
+        return;
+      }
+
+      if (room.phase === "results") {
+        renderResults(room);
+        showScreen("results");
+      }
+    }
+
+    async function startRound() {
+      const room = state.room;
+      if (!room) return;
+      if (!state.isHost) return showToast("only the host can start");
+      if (playerArray(room).length < 2) return showToast("need at least 2 players");
+
+      const resetPlayers = {};
+      playerArray(room).forEach((player) => {
+        resetPlayers[player.id] = { ...player, finished: false };
+      });
+
+      await update(ref(db, `rooms/${room.code}`), {
+        phase: "playing",
+        players: resetPlayers,
+        answers: {},
+        updatedAt: Date.now()
+      });
+    }
+
+    function renderQuestion(room) {
+      const total = room.selectedTopics.length;
+      const myAnswers = getMyAnswers(room);
+      const answeredCount = Object.keys(myAnswers).length;
+      const topic = room.selectedTopics[state.currentTopicIndex];
+
+      currentPlayer.textContent = `${state.playerName}'s turn`;
+      topicText.textContent = topic;
+      progressLabel.textContent = `topic ${state.currentTopicIndex + 1} of ${total}`;
+      roomProgressLabel.textContent = `${finishedCount(room)} of ${playerArray(room).length} players finished`;
+      progressFill.style.width = `${Math.round((answeredCount / total) * 100)}%`;
+      backBtn.disabled = answeredCount === 0;
+    }
+
+    async function recordAnswer(score) {
+      const room = state.room;
+      if (!room) return;
+
+      const topic = room.selectedTopics[state.currentTopicIndex];
+      const payload = {};
+      payload[`rooms/${room.code}/answers/${state.playerId}/${slugTopic(topic)}`] = {
+        topic,
+        score,
+        answeredAt: Date.now()
+      };
+
+      const currentAnswers = { ...getMyAnswers(room), [slugTopic(topic)]: { topic, score } };
+      const answeredCount = Object.keys(currentAnswers).length;
+      const done = answeredCount >= room.selectedTopics.length;
+
+      if (done) {
+        payload[`rooms/${room.code}/players/${state.playerId}/finished`] = true;
+      }
+
+      payload[`rooms/${room.code}/updatedAt`] = Date.now();
+      await update(ref(db), payload);
+
+      if (!done) {
+        state.currentTopicIndex = findFirstUnansweredIndex({
+          ...room,
+          answers: {
+            ...(room.answers || {}),
+            [state.playerId]: currentAnswers
+          }
+        });
+      }
+    }
+
+    async function goBackOneAnswer() {
+      const room = state.room;
+      if (!room) return;
+
+      const myAnswers = getMyAnswers(room);
+      const answeredTopics = room.selectedTopics
+        .map((topic, index) => ({ topic, index, key: slugTopic(topic) }))
+        .filter((item) => myAnswers[item.key]);
+
+      if (!answeredTopics.length) return;
+
+      const last = answeredTopics[answeredTopics.length - 1];
+      await set(ref(db, `rooms/${room.code}/answers/${state.playerId}/${last.key}`), null);
+      await update(ref(db, `rooms/${room.code}/players/${state.playerId}`), { finished: false });
+      state.currentTopicIndex = last.index;
+    }
+
+    function renderWaiting(room) {
+      renderPlayerPills(waitingPlayers, room);
+      waitingStatus.textContent = `${finishedCount(room)} of ${playerArray(room).length} players finished.`;
+    }
+
+    function renderResults(room) {
+      const pairResults = calculatePairs(room);
+      resultsGrid.innerHTML = "";
+
+      if (!pairResults.length) {
+        resultsGrid.innerHTML = '<div class="status-box">not enough players to make pairs</div>';
+        return;
+      }
+
+      pairResults.forEach((pair, index) => {
+        const card = document.createElement("article");
+        card.className = "result-card";
+        card.innerHTML = `
+          <div class="pair-head">
+            <div>
+              <div class="pair-rank">#${index + 1} closest match</div>
+              <div class="pair-title">${escapeHtml(pair.a)} + ${escapeHtml(pair.b)}</div>
+            </div>
+            <div class="score-pill">${pair.percent}% match</div>
+          </div>
+          <div class="meter"><div class="meter-fill" style="width:${pair.percent}%"></div></div>
+          <div class="small">average difference: ${pair.averageDifference.toFixed(2)} points</div>
+          <div class="duel">
+            <div class="duel-title">duke it out:</div>
+            <div>${escapeHtml(pair.biggestDisagreement.topic)}</div>
+            <div class="answer-line">
+              <span>${escapeHtml(pair.a)}: ${pair.biggestDisagreement.aScore} — ${scaleLabels[pair.biggestDisagreement.aScore]}</span>
+              <span>${escapeHtml(pair.b)}: ${pair.biggestDisagreement.bScore} — ${scaleLabels[pair.biggestDisagreement.bScore]}</span>
+            </div>
+          </div>
+        `;
+        resultsGrid.appendChild(card);
+      });
+    }
+
+    function calculatePairs(room) {
+      const players = playerArray(room).filter((player) => {
+        return room.answers && room.answers[player.id];
+      });
+      const pairs = [];
+
+      for (let i = 0; i < players.length; i++) {
+        for (let j = i + 1; j < players.length; j++) {
+          const a = players[i];
+          const b = players[j];
+          let totalDiff = 0;
+          let biggest = {
+            topic: room.selectedTopics[0],
+            diff: -1,
+            aScore: 3,
+            bScore: 3
+          };
+
+          room.selectedTopics.forEach((topic) => {
+            const key = slugTopic(topic);
+            const aScore = Number(room.answers[a.id]?.[key]?.score || 3);
+            const bScore = Number(room.answers[b.id]?.[key]?.score || 3);
+            const diff = Math.abs(aScore - bScore);
+            totalDiff += diff;
+            if (diff > biggest.diff) {
+              biggest = { topic, diff, aScore, bScore };
+            }
+          });
+
+          const maxDiff = room.selectedTopics.length * 4;
+          const similarity = maxDiff === 0 ? 100 : ((maxDiff - totalDiff) / maxDiff) * 100;
+
+          pairs.push({
+            a: a.name,
+            b: b.name,
+            percent: Math.round(similarity),
+            averageDifference: totalDiff / room.selectedTopics.length,
+            biggestDisagreement: biggest
+          });
+        }
+      }
+
+      return pairs.sort((x, y) => {
+        if (y.percent !== x.percent) return y.percent - x.percent;
+        return x.averageDifference - y.averageDifference;
+      });
+    }
+
+    async function copyInvite() {
+      const code = state.roomCode;
+      const url = new URL(window.location.href);
+      url.searchParams.set("room", code);
+      const text = `join my fight me game! room: ${code}\n${url.toString()}`;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("invite copied");
+      } catch {
+        showToast(`code: ${code}`);
+      }
+    }
+
+    async function copyResults() {
+      const room = state.room;
+      const pairResults = calculatePairs(room);
+      const lines = [
+        "fight me game! live results",
+        "---------------------------",
+        ...pairResults.map((pair, index) => `${index + 1}. ${pair.a} + ${pair.b}: ${pair.percent}% match | duke it out: ${pair.biggestDisagreement.topic}`)
+      ];
+
+      try {
+        await navigator.clipboard.writeText(lines.join("\n"));
+        showToast("results copied");
+      } catch {
+        showToast("could not copy automatically");
+      }
+    }
+
+    function renderPlayerPills(container, room) {
+      const players = playerArray(room);
+      container.innerHTML = "";
+
+      if (!players.length) {
+        container.innerHTML = '<div class="status-box">no players yet</div>';
+        return;
+      }
+
+      players.forEach((player) => {
+        const pill = document.createElement("span");
+        pill.className = `pill ${player.finished ? "done" : ""}`;
+        pill.textContent = `${player.name}${player.finished ? " ✓" : ""}`;
+        container.appendChild(pill);
+      });
+    }
+
+    async function leaveRoom() {
+      detachRoomListener();
+
+      if (db && state.roomCode && state.playerId) {
+        await set(ref(db, `rooms/${state.roomCode}/players/${state.playerId}`), null);
+        await set(ref(db, `rooms/${state.roomCode}/answers/${state.playerId}`), null);
+      }
+
+      clearUrlRoom();
+      state.roomCode = "";
+      state.playerId = "";
+      state.playerName = "";
+      state.room = null;
+      state.currentTopicIndex = 0;
+      state.isHost = false;
+      showScreen("home");
+    }
+
+    function showScreen(name) {
+      Object.entries(screens).forEach(([key, element]) => {
+        element.classList.toggle("hidden", key !== name);
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function getCleanTopics() {
+      return topicsBox.value
+        .split("\n")
+        .map((topic) => topic.trim().toLowerCase())
+        .filter(Boolean);
+    }
+
+    function cleanName(value) {
+      return value.trim().slice(0, 32);
+    }
+
+    function generateCode() {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let code = "";
+      for (let i = 0; i < 6; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return code;
+    }
+
+    function makePlayerId() {
+      return `p_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    function slugTopic(topic) {
+      let hash = 0;
+      for (let i = 0; i < topic.length; i++) {
+        hash = ((hash << 5) - hash) + topic.charCodeAt(i);
+        hash |= 0;
+      }
+      return `t_${Math.abs(hash)}`;
+    }
+
+    function playerArray(room) {
+      return Object.values(room.players || {}).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+    }
+
+    function getMyAnswers(room) {
+      return room.answers?.[state.playerId] || {};
+    }
+
+    function findFirstUnansweredIndex(room) {
+      const myAnswers = getMyAnswers(room);
+      return room.selectedTopics.findIndex((topic) => !myAnswers[slugTopic(topic)]);
+    }
+
+    function finishedCount(room) {
+      return playerArray(room).filter((player) => player.finished).length;
+    }
+
+    function allPlayersFinished(room) {
+      const players = playerArray(room);
+      return players.length >= 2 && players.every((player) => player.finished);
+    }
+
+    function setUrlRoom(code) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("room", code);
+      window.history.replaceState({}, "", url);
+    }
+
+    function clearUrlRoom() {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("room");
+      window.history.replaceState({}, "", url);
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timeout);
+      showToast.timeout = setTimeout(() => toast.classList.remove("show"), 1900);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
+</body>
+</html>
