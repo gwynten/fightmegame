@@ -517,17 +517,6 @@
       </div>
     </section>
 
-    <section id="configScreen" class="panel hidden">
-      <div class="panel-inner">
-        <h2 class="panel-title">connect the live room</h2>
-        <div class="setup-warning">
-          <strong>one tiny setup step:</strong> to let everyone play from separate phones, this page needs a firebase realtime database. paste your firebase config into the code where it says <code>paste-your-firebase-config-here</code>, then upload this file to github pages.
-        </div>
-        <p class="panel-text">
-          the group code system is already built in. once firebase is connected, one person creates a room, everyone else joins with the same code, and votes sync across devices.
-        </p>
-      </div>
-    </section>
 
     <section id="homeScreen" class="panel">
       <div class="panel-inner">
@@ -677,25 +666,6 @@
       getDatabase, ref, set, get, update, onValue, off, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
-    /*
-      paste-your-firebase-config-here
-
-      1. create a firebase project
-      2. add a web app
-      3. create a realtime database
-      4. paste your config object below
-      5. replace database rules for testing with:
-         {
-           "rules": {
-             "rooms": {
-               ".read": true,
-               ".write": true
-             }
-           }
-         }
-
-      after testing, tighten these rules before sharing widely.
-    */
     const firebaseConfig = {
       apiKey: "AIzaSyBgXLksfFJkDu3RuRuKULggQJMU20X0gJ0",
       authDomain: "fight-me-game.firebaseapp.com",
@@ -772,7 +742,6 @@
     };
 
     const screens = {
-      config: document.getElementById("configScreen"),
       home: document.getElementById("homeScreen"),
       lobby: document.getElementById("lobbyScreen"),
       game: document.getElementById("gameScreen"),
@@ -818,24 +787,14 @@
     }
 
     function setupFirebase() {
-      const looksUnconfigured =
-        firebaseConfig.apiKey.includes("paste-your") ||
-        firebaseConfig.databaseURL.includes("paste-your");
-
-      if (looksUnconfigured) {
-        showScreen("config");
-        showToast("firebase config needed for live group codes");
-        return;
-      }
-
       try {
         app = initializeApp(firebaseConfig);
         db = getDatabase(app);
         showScreen("home");
       } catch (err) {
         console.error(err);
-        showScreen("config");
-        showToast("firebase could not connect");
+        showScreen("home");
+        showToast("firebase could not connect — check database rules and config");
       }
     }
 
